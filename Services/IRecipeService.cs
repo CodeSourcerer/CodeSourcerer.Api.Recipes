@@ -11,5 +11,6 @@ namespace CodeSourcerer.Api.Recipes.Services
     {
         Task<Recipe> AddAsync(Recipe recipe, CancellationToken token = default);
         Task<Recipe> GetAsync(int id, CancellationToken token = default);
+        Task<Recipe> UpdateAsync(Recipe recipe, CancellationToken token = default);
     }
 }

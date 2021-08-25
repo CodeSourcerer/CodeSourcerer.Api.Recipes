@@ -50,5 +50,22 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             return Models.Recipe.FromEntity(r);
         }
+
+        public async Task<Models.Recipe> UpdateAsync(Models.Recipe recipe, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var r = await _dbContext.FindAsync<Recipe>(new object[] { recipe.Id }, cancellationToken: token);
+
+            if (r == null)
+            {
+                return null;
+            }
+
+            r = recipe.ToEntity(r);
+            await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
+
+            return Models.Recipe.FromEntity(r);
+        }
     }
 }

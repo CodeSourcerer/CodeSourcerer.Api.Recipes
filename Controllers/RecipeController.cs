@@ -49,6 +49,31 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
         }
 
+        [HttpPost]
+        [Produces("application/json", Type = typeof(Recipe))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesErrorResponseType(typeof(ProblemDetails))]
+        public async Task<ActionResult<Recipe>> UpdateRecipe([FromBody] Recipe recipe, CancellationToken token = default)
+        {
+            try
+            {
+                var updatedRecipe = await _recipeSvc.UpdateAsync(recipe, token).ConfigureAwait(false);
+
+                return Ok(updatedRecipe);
+            }
+            catch (Exception ex)
+            {
+                var problem = new ProblemDetails
+                {
+                    Title = "Error Updating Recipe",
+                    Detail = ex.InnerException.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                };
+
+                return StatusCode(StatusCodes.Status500InternalServerError, problem);
+            }
+        }
+
         [HttpGet("{id}")]
         [Produces("application/json", Type = typeof(Recipe))]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -70,7 +95,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             {
                 var problem = new ProblemDetails
                 {
-                    Title = "Error Creating Recipe",
+                    Title = "Error Retrieving Recipe",
                     Detail = ex.Message,
                     Status = StatusCodes.Status500InternalServerError
                 };
