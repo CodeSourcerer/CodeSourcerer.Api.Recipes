@@ -45,7 +45,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
                     Status = StatusCodes.Status500InternalServerError
                 };
 
-                return StatusCode(StatusCodes.Status500InternalServerError, problem);
+                return StatusCode(problem.Status.Value, problem);
             }
         }
 
@@ -58,6 +58,18 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             try
             {
                 var updatedRecipe = await _recipeSvc.UpdateAsync(recipe, token).ConfigureAwait(false);
+                
+                if (updatedRecipe == null)
+                {
+                    var problem = new ProblemDetails
+                    {
+                        Title = "Error Updating Recipe",
+                        Detail = "The recipe with the given Id could not be found.",
+                        Status = StatusCodes.Status404NotFound
+                    };
+
+                    return StatusCode(problem.Status.Value, problem);
+                }
 
                 return Ok(updatedRecipe);
             }
@@ -70,7 +82,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
                     Status = StatusCodes.Status500InternalServerError
                 };
 
-                return StatusCode(StatusCodes.Status500InternalServerError, problem);
+                return StatusCode(problem.Status.Value, problem);
             }
         }
 
@@ -100,7 +112,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
                     Status = StatusCodes.Status500InternalServerError
                 };
 
-                return StatusCode(StatusCodes.Status500InternalServerError, problem);
+                return StatusCode(problem.Status.Value, problem);
             }
         }
 
