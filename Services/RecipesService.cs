@@ -20,19 +20,13 @@ namespace CodeSourcerer.Api.Recipes.Services
         {
             token.ThrowIfCancellationRequested();
 
-            var newRecipe = new Recipe
-            {
-                Name     = recipe.Name,
-                Notes    = recipe.Notes,
-                Servings = recipe.Servings,
-                Tags     = recipe.Tags
-            };
+            var recipeEntity = Models.Recipe.ToEntity(recipe);
 
-            var addedRecipe = await _dbContext.AddAsync(newRecipe, token).ConfigureAwait(false);
+            await _dbContext.AddAsync(recipeEntity, token).ConfigureAwait(false);
 
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
-            return Models.Recipe.FromEntity(addedRecipe.Entity);
+            return Models.Recipe.FromEntity(recipeEntity);
         }
 
         public async Task<Models.Recipe> GetAsync(int id, CancellationToken token = default)
@@ -66,6 +60,16 @@ namespace CodeSourcerer.Api.Recipes.Services
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
             return Models.Recipe.FromEntity(r);
+        }
+
+        public async Task<IEnumerable<Models.Recipe>> GetAllAsync(CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var recipes = from r in _dbContext.Recipes
+                          select Models.Recipe.FromEntity(r);
+
+            return recipes;
         }
     }
 }

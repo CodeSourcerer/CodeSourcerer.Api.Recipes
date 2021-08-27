@@ -30,6 +30,7 @@ namespace CodeSourcerer.Api.Recipes
         {
             services.AddDbContext<recipesContext>();
             services.AddTransient<IRecipeService, RecipesService>();
+            services.AddTransient<IIngredientService, IngredientService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

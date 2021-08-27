@@ -116,6 +116,31 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
         }
 
+        [HttpGet]
+        [Produces("application/json", Type = typeof(Recipe))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesErrorResponseType(typeof(ProblemDetails))]
+        public async Task<ActionResult<Recipe>> All(CancellationToken token = default)
+        {
+            try
+            {
+                var recipes = await _recipeSvc.GetAllAsync(token).ConfigureAwait(false);
+
+                return Ok(recipes);
+            }
+            catch (Exception ex)
+            {
+                var problem = new ProblemDetails
+                {
+                    Title = "Error Retrieving Recipes",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                };
+
+                return StatusCode(problem.Status.Value, problem);
+            }
+        }
+
         [HttpGet("test")]
         public ActionResult<IEnumerable<Recipe>> GetTest()
         {
