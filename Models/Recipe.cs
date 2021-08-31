@@ -15,17 +15,36 @@ namespace CodeSourcerer.Api.Recipes.Models
         public int?     Servings { get; set; }
         public string   Name { get; set; }
         public string   Notes { get; set; }
+        public IList<RecipeIngredient> Ingredients { get; private set; }
 
-        public static Recipe FromEntity(DbEntities.Recipe recipe)
+        public Recipe()
         {
-            return new Recipe
+            Ingredients = new List<RecipeIngredient>();
+        }
+
+        public static Recipe FromEntity(DbEntities.Recipe entity)
+        {
+            var recipe = new Recipe
             {
-                Id       = recipe.Id,
-                Name     = recipe.Name,
-                Notes    = recipe.Notes,
-                Tags     = recipe.Tags,
-                Servings = recipe.Servings
+                Id       = entity.Id,
+                Name     = entity.Name,
+                Notes    = entity.Notes,
+                Tags     = entity.Tags,
+                Servings = entity.Servings
             };
+
+            if (entity.RecipeIngredients?.Count > 0 && 
+                entity.RecipeIngredients.First().Ingredient != null)
+            {
+                var ingredients = from ri in entity.RecipeIngredients
+                                  select ri;
+                foreach (var i in ingredients)
+                {
+                    recipe.Ingredients.Add(RecipeIngredient.FromEntity(i));
+                }
+            }
+
+            return recipe;
         }
 
         public DbEntities.Recipe ToEntity(DbEntities.Recipe exisitng)
@@ -38,14 +57,14 @@ namespace CodeSourcerer.Api.Recipes.Models
             return exisitng;
         }
 
-        public static DbEntities.Recipe ToEntity(Recipe recipe)
+        public static DbEntities.Recipe ToEntity(Recipe model)
         {
             return new DbEntities.Recipe
             {
-                Name     = recipe.Name,
-                Notes    = recipe.Notes,
-                Tags     = recipe.Tags,
-                Servings = recipe.Servings
+                Name     = model.Name,
+                Notes    = model.Notes,
+                Tags     = model.Tags,
+                Servings = model.Servings
             };
         }
     }

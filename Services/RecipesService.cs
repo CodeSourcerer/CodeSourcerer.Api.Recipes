@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeSourcerer.RecipeContext.RecipeContext;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeSourcerer.Api.Recipes.Services
 {
@@ -24,6 +25,17 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             await _dbContext.AddAsync(recipeEntity, token).ConfigureAwait(false);
 
+            foreach (var ingredient in recipe.Ingredients)
+            {
+                var recipeIngredient = new RecipeIngredient
+                {
+                    IngredientId = ingredient.Ingredient.Id,
+                    Recipe = recipeEntity,
+                    Amount = ingredient.Amount,
+                    Unit = ingredient.Unit
+                };
+                await _dbContext.AddAsync(recipeIngredient, token).ConfigureAwait(false);
+            }
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
             return Models.Recipe.FromEntity(recipeEntity);
@@ -33,7 +45,8 @@ namespace CodeSourcerer.Api.Recipes.Services
         {
             token.ThrowIfCancellationRequested();
 
-            var r = (from recipe in _dbContext.Recipes
+            var r = (from recipe in _dbContext.Recipes.Include(r => r.RecipeIngredients)
+                                                      .ThenInclude(ri => ri.Ingredient)
                      where recipe.Id == id
                      select recipe).SingleOrDefault();
 
@@ -57,6 +70,7 @@ namespace CodeSourcerer.Api.Recipes.Services
             }
 
             r = recipe.ToEntity(r);
+
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
             return Models.Recipe.FromEntity(r);
@@ -66,10 +80,39 @@ namespace CodeSourcerer.Api.Recipes.Services
         {
             token.ThrowIfCancellationRequested();
 
-            var recipes = from r in _dbContext.Recipes
+            var recipes = from r in _dbContext.Recipes.Include(r => r.RecipeIngredients)
+                                                      .ThenInclude(ri => ri.Ingredient)
                           select Models.Recipe.FromEntity(r);
 
             return recipes;
+        }
+
+        public async Task<Models.RecipeIngredient> AddIngredientAsync(Models.Recipe recipe, Models.Ingredient ingredient, int amount, string unit, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var recipeIngredient = new Models.RecipeIngredient
+            {
+                Recipe = recipe,
+                Ingredient = ingredient,
+                Amount = amount,
+                Unit = unit
+            };
+
+            return await AddIngredientAsync(recipeIngredient, token).ConfigureAwait(false);
+        }
+
+        public async Task<Models.RecipeIngredient> AddIngredientAsync(Models.RecipeIngredient recipeIngredient, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var ri = recipeIngredient.ToEntity();
+
+            await _dbContext.AddAsync(ri, token).ConfigureAwait(false);
+
+            await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
+
+            return Models.RecipeIngredient.FromEntity(ri);
         }
     }
 }
