@@ -38,7 +38,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Creating Recipe",
@@ -76,7 +76,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Updating Recipe",
@@ -107,7 +107,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Retrieving Recipe",
@@ -133,7 +133,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Retrieving Recipes",
@@ -149,7 +149,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
         [Produces("application/json", Type = typeof(Recipe))]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesErrorResponseType(typeof(ProblemDetails))]
-        public async Task<ActionResult<Recipe>> AddIngredient(int recipeId, [FromBody] AddIngredientRequest ingredientRequest, CancellationToken token = default)
+        public async Task<ActionResult<Recipe>> AddIngredient(int recipeId, [FromBody] RecipeIngredientRequest ingredientRequest, CancellationToken token = default)
         {
             try
             {
@@ -169,7 +169,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Adding Ingredient to Recipe",
@@ -206,7 +206,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
-                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Removing Ingredient from Recipe",
@@ -217,6 +217,47 @@ namespace CodeSourcerer.Api.Recipes.Controllers
                 return StatusCode(problem.Status.Value, problem);
             }
         }
+
+        [HttpPut("{recipeId}/Ingredients/{recipeIngredientId}")]
+        [Produces("application/json", Type = typeof(Recipe))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesErrorResponseType(typeof(ProblemDetails))]
+        public async Task<ActionResult<Recipe>> UpdateIngredient(int recipeId, int recipeIngredientId, [FromBody] RecipeIngredientRequest request, CancellationToken token = default)
+        {
+            try
+            {
+                var recipe = await _recipeSvc.UpdateIngredientAsync(recipeId, recipeIngredientId, request.IngredientId, request.Amount, request.Unit, token).ConfigureAwait(false);
+                if (recipe == null)
+                {
+                    var problem = new ProblemDetails
+                    {
+                        Title = "Error Updating Ingredient for Recipe",
+                        Detail = "Unable to locate given recipe ingredient",
+                        Status = StatusCodes.Status404NotFound
+                    };
+                    return StatusCode(problem.Status.Value, problem);
+                }
+
+                return Ok(recipe);
+            }
+            catch (Exception ex)
+            {
+                var msg = (ex is AggregateException exception) ? exception.InnerExceptions.First().Message : ex.Message;
+                var problem = new ProblemDetails
+                {
+                    Title = "Error Updating Ingredient for Recipe",
+                    Detail = msg,
+                    Status = StatusCodes.Status400BadRequest
+                };
+
+                return StatusCode(problem.Status.Value, problem);
+            }
+        }
+
+        // TODO:
+        // Add AddStep()
+        // Add DeleteStep()
+        // Add UpdateStep()
 
         [HttpGet("test")]
         public ActionResult<IEnumerable<Recipe>> GetTest()

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CodeSourcerer.Api.Recipes.Models
 {
-    public class AddIngredientRequest
+    public class RecipeIngredientRequest
     {
         public int IngredientId { get; set; }
         public double Amount { get; set; }

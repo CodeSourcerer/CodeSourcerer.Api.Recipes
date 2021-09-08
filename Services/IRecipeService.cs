@@ -15,5 +15,6 @@ namespace CodeSourcerer.Api.Recipes.Services
         Task<IEnumerable<Recipe>> GetAllAsync(CancellationToken token = default);
         Task<Recipe> AddIngredientAsync(int recipeId, int ingredientId, double amount, string unit, CancellationToken token = default);
         Task<Recipe> DeleteIngredientAsync(int recipeId, int recipeIngredientId, CancellationToken token = default);
+        Task<Recipe> UpdateIngredientAsync(int recipeId, int recipeIngredientId, int ingredientId, double amount, string unit, CancellationToken token = default);
     }
 }

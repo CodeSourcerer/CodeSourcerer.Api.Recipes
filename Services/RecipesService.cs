@@ -150,5 +150,47 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             return Models.Recipe.FromEntity(recipe, true);
         }
+
+        public async Task<Models.Recipe> UpdateIngredientAsync(int recipeId, int recipeIngredientId, int ingredientId, double amount, string unit, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var ri = await _dbContext.FindAsync<RecipeIngredient>(new object[] { recipeIngredientId }, cancellationToken: token).ConfigureAwait(false);
+            //var ri = await (from ingredient in _dbContext.RecipeIngredients
+            //                where ingredient.RecipeId == recipeId &&
+            //                      ingredient.IngredientId == ingredientId
+            //                select ingredient).SingleAsync(token).ConfigureAwait(false);
+
+            if (ri == null)
+                return null;
+
+            if (ri.RecipeId != recipeId)
+                throw new InvalidOperationException("Given recipe ingredient does not belong to given recipe.");
+
+            if (amount > 0.0)
+                ri.Amount = amount;
+
+            if (!string.IsNullOrWhiteSpace(unit))
+                ri.Unit = unit;
+
+            if (ingredientId != ri.IngredientId)
+            {
+                var targetIngredient = await _dbContext.FindAsync<Ingredient>(new object[] { ingredientId }, cancellationToken: token).ConfigureAwait(false);
+                if (targetIngredient == null)
+                {
+                    throw new InvalidOperationException("Updated ingredient not found");
+                }
+                ri.IngredientId = ingredientId;
+            }
+
+            await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
+
+            var recipe = await (from r in _dbContext.Recipes.Include(r2 => r2.RecipeIngredients)
+                                                            .ThenInclude(r2 => r2.Ingredient)
+                                where r.Id == ri.RecipeId
+                                select r).SingleAsync(token).ConfigureAwait(false);
+
+            return Models.Recipe.FromEntity(recipe, true);
+        }
     }
 }
