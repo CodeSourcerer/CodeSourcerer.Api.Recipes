@@ -6,9 +6,9 @@ namespace CodeSourcerer.Api.Recipes.Models
     public class RecipeIngredient
     {
         public int Id { get; set; }
-        public Recipe Recipe { get; set; }
+        public int RecipeId { get; set; }
         public Ingredient Ingredient { get; set; }
-        public int Amount { get; set; }
+        public double Amount { get; set; }
         public string Unit { get; set; }
 
         public DbEntities.RecipeIngredient ToEntity()
@@ -18,14 +18,13 @@ namespace CodeSourcerer.Api.Recipes.Models
 
         public static DbEntities.RecipeIngredient ToEntity(RecipeIngredient model)
         {
-            if (model.Recipe == null) throw new ArgumentException("Recipe in model cannot be null.");
             if (model.Ingredient == null) throw new ArgumentException("Ingredient in model cannot be null.");
 
             var entity = new DbEntities.RecipeIngredient
             {
                 Amount = model.Amount,
                 Unit = model.Unit,
-                RecipeId = model.Recipe.Id,
+                RecipeId = model.RecipeId,
                 IngredientId = model.Ingredient.Id
             };
 
@@ -37,14 +36,10 @@ namespace CodeSourcerer.Api.Recipes.Models
             var recipeIngredient = new RecipeIngredient
             {
                 Id = entity.Id,
+                RecipeId = entity.RecipeId,
                 Amount = entity.Amount,
                 Unit = entity.Unit
             };
-
-            if (entity.Recipe != null)
-            {
-                recipeIngredient.Recipe = Recipe.FromEntity(entity.Recipe);
-            }
 
             if (entity.Ingredient != null)
             {

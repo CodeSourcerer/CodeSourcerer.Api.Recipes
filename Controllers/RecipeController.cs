@@ -38,10 +38,11 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Creating Recipe",
-                    Detail = ex.Message,
+                    Detail = msg,
                     Status = StatusCodes.Status500InternalServerError
                 };
 
@@ -58,7 +59,7 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             try
             {
                 var updatedRecipe = await _recipeSvc.UpdateAsync(recipe, token).ConfigureAwait(false);
-                
+
                 if (updatedRecipe == null)
                 {
                     var problem = new ProblemDetails
@@ -75,10 +76,11 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Updating Recipe",
-                    Detail = ex.InnerException.Message,
+                    Detail = msg,
                     Status = StatusCodes.Status500InternalServerError
                 };
 
@@ -105,10 +107,11 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Retrieving Recipe",
-                    Detail = ex.Message,
+                    Detail = msg,
                     Status = StatusCodes.Status500InternalServerError
                 };
 
@@ -130,11 +133,85 @@ namespace CodeSourcerer.Api.Recipes.Controllers
             }
             catch (Exception ex)
             {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
                 var problem = new ProblemDetails
                 {
                     Title = "Error Retrieving Recipes",
-                    Detail = ex.Message,
+                    Detail = msg,
                     Status = StatusCodes.Status500InternalServerError
+                };
+
+                return StatusCode(problem.Status.Value, problem);
+            }
+        }
+
+        [HttpPost("{recipeId}/Ingredients")]
+        [Produces("application/json", Type = typeof(Recipe))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesErrorResponseType(typeof(ProblemDetails))]
+        public async Task<ActionResult<Recipe>> AddIngredient(int recipeId, [FromBody] AddIngredientRequest ingredientRequest, CancellationToken token = default)
+        {
+            try
+            {
+                var recipe = await _recipeSvc.AddIngredientAsync(recipeId, ingredientRequest.IngredientId, ingredientRequest.Amount, ingredientRequest.Unit, token).ConfigureAwait(false);
+                if (recipe == null)
+                {
+                    var problem = new ProblemDetails
+                    {
+                        Title = "Error Adding Ingredient to Recipe",
+                        Detail = "Unable to locate given recipe or ingredient",
+                        Status = StatusCodes.Status404NotFound
+                    };
+                    return StatusCode(problem.Status.Value, problem);
+                }
+
+                return Ok(recipe);
+            }
+            catch (Exception ex)
+            {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var problem = new ProblemDetails
+                {
+                    Title = "Error Adding Ingredient to Recipe",
+                    Detail = msg,
+                    Status = StatusCodes.Status500InternalServerError
+                };
+
+                return StatusCode(problem.Status.Value, problem);
+            }
+        }
+
+        [HttpDelete("{recipeId}/Ingredients/{recipeIngredientId}")]
+        [Produces("application/json", Type = typeof(Recipe))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesErrorResponseType(typeof(ProblemDetails))]
+        public async Task<ActionResult<Recipe>> DeleteIngredient(int recipeId, int recipeIngredientId, CancellationToken token = default)
+        {
+            try
+            {
+                var recipe = await _recipeSvc.DeleteIngredientAsync(recipeId, recipeIngredientId, token).ConfigureAwait(false);
+
+                if (recipe == null)
+                {
+                    var problem = new ProblemDetails
+                    {
+                        Title = "Error Removing Ingredient From Recipe",
+                        Detail = "Unable to locate given recipe ingredient",
+                        Status = StatusCodes.Status404NotFound
+                    };
+                    return StatusCode(problem.Status.Value, problem);
+                }
+
+                return Ok(recipe);
+            }
+            catch (Exception ex)
+            {
+                var msg = (ex is AggregateException) ? ((AggregateException)ex).InnerExceptions.First().Message : ex.Message;
+                var problem = new ProblemDetails
+                {
+                    Title = "Error Removing Ingredient from Recipe",
+                    Detail = msg,
+                    Status = StatusCodes.Status400BadRequest
                 };
 
                 return StatusCode(problem.Status.Value, problem);

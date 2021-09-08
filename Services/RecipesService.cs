@@ -38,7 +38,7 @@ namespace CodeSourcerer.Api.Recipes.Services
             }
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
-            return Models.Recipe.FromEntity(recipeEntity);
+            return Models.Recipe.FromEntity(recipeEntity, true);
         }
 
         public async Task<Models.Recipe> GetAsync(int id, CancellationToken token = default)
@@ -55,7 +55,7 @@ namespace CodeSourcerer.Api.Recipes.Services
                 return null;
             }
 
-            return Models.Recipe.FromEntity(r);
+            return Models.Recipe.FromEntity(r, true);
         }
 
         public async Task<Models.Recipe> UpdateAsync(Models.Recipe recipe, CancellationToken token = default)
@@ -73,7 +73,7 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
-            return Models.Recipe.FromEntity(r);
+            return Models.Recipe.FromEntity(r, true);
         }
 
         public async Task<IEnumerable<Models.Recipe>> GetAllAsync(CancellationToken token = default)
@@ -82,19 +82,27 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             var recipes = from r in _dbContext.Recipes.Include(r => r.RecipeIngredients)
                                                       .ThenInclude(ri => ri.Ingredient)
-                          select Models.Recipe.FromEntity(r);
+                          select Models.Recipe.FromEntity(r, true);
 
             return recipes;
         }
 
-        public async Task<Models.RecipeIngredient> AddIngredientAsync(Models.Recipe recipe, Models.Ingredient ingredient, int amount, string unit, CancellationToken token = default)
+        public async Task<Models.Recipe> AddIngredientAsync(int recipeId, int ingredientId, double amount, string unit, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
 
+            var recipe = await _dbContext.FindAsync<Recipe>(new object[] { recipeId }, cancellationToken: token).ConfigureAwait(false);
+            if (recipe == null)
+                return null;
+
+            var ingredient = await _dbContext.FindAsync<Ingredient>(new object[] { ingredientId }, cancellationToken: token).ConfigureAwait(false);
+            if (ingredient == null)
+                return null;
+
             var recipeIngredient = new Models.RecipeIngredient
             {
-                Recipe = recipe,
-                Ingredient = ingredient,
+                RecipeId = recipeId,
+                Ingredient = Models.Ingredient.FromEntity(ingredient),
                 Amount = amount,
                 Unit = unit
             };
@@ -102,7 +110,7 @@ namespace CodeSourcerer.Api.Recipes.Services
             return await AddIngredientAsync(recipeIngredient, token).ConfigureAwait(false);
         }
 
-        public async Task<Models.RecipeIngredient> AddIngredientAsync(Models.RecipeIngredient recipeIngredient, CancellationToken token = default)
+        public async Task<Models.Recipe> AddIngredientAsync(Models.RecipeIngredient recipeIngredient, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
 
@@ -112,7 +120,35 @@ namespace CodeSourcerer.Api.Recipes.Services
 
             await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
-            return Models.RecipeIngredient.FromEntity(ri);
+            var recipe = await (from r in _dbContext.Recipes.Include(r2 => r2.RecipeIngredients)
+                                                            .ThenInclude(r2 => r2.Ingredient)
+                                where r.Id == ri.RecipeId
+                                select r).SingleAsync(token).ConfigureAwait(false);
+
+            return Models.Recipe.FromEntity(recipe, true);
+        }
+
+        public async Task<Models.Recipe> DeleteIngredientAsync(int recipeId, int recipeIngredientId, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var ri = await _dbContext.FindAsync<RecipeIngredient>(new object[] { recipeIngredientId }, cancellationToken: token).ConfigureAwait(false);
+
+            if (ri == null)
+                return null;
+
+            if (ri.RecipeId != recipeId)
+                throw new InvalidOperationException("Given recipe ingredient does not belong to given recipe.");
+
+            _dbContext.Remove(ri);
+            await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
+
+            var recipe = await (from r in _dbContext.Recipes.Include(r2 => r2.RecipeIngredients)
+                                                            .ThenInclude(r2 => r2.Ingredient)
+                                where r.Id == ri.RecipeId
+                                select r).SingleAsync(token).ConfigureAwait(false);
+
+            return Models.Recipe.FromEntity(recipe, true);
         }
     }
 }

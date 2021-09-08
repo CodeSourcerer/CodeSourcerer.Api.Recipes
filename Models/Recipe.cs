@@ -22,7 +22,7 @@ namespace CodeSourcerer.Api.Recipes.Models
             Ingredients = new List<RecipeIngredient>();
         }
 
-        public static Recipe FromEntity(DbEntities.Recipe entity)
+        public static Recipe FromEntity(DbEntities.Recipe entity, bool includeIngredients = false)
         {
             var recipe = new Recipe
             {
@@ -33,7 +33,8 @@ namespace CodeSourcerer.Api.Recipes.Models
                 Servings = entity.Servings
             };
 
-            if (entity.RecipeIngredients?.Count > 0 && 
+            if (includeIngredients &&
+                entity.RecipeIngredients?.Count > 0 && 
                 entity.RecipeIngredients.First().Ingredient != null)
             {
                 var ingredients = from ri in entity.RecipeIngredients
